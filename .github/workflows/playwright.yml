@@ -49,17 +49,17 @@ jobs:
         run: npx playwright install-deps chromium
 
       - name: Run Day1 UI tests
-        run: npx playwright test tests/Day1/ui.spec.ts tests/Day1/example.spec.ts --project=day1
+        run: npx playwright test tests/Day1/ui.spec.ts tests/Day1/example.spec.ts --project=day1 --reporter=blob
         env:
           CI: true
 
-      - name: Upload Day1 UI report
+      - name: Upload Day1 UI blob report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: report-day1-ui-${{ github.run_number }}
-          path: playwright-report/
-          retention-days: 14
+          name: blob-report-day1-ui-${{ github.run_number }}
+          path: blob-report/
+          retention-days: 3
 
   # ── Job 2: Day1 DB Tests (needs PostgreSQL + mock auth server) ─────────────
   day1-db:
@@ -168,17 +168,17 @@ jobs:
         run: npx playwright install-deps chromium
 
       - name: Run DB tests
-        run: npx playwright test tests/Day1/db.spec.ts --project=day1
+        run: npx playwright test tests/Day1/db.spec.ts --project=day1 --reporter=blob
         env:
           CI: true
 
-      - name: Upload Day1 DB report
+      - name: Upload Day1 DB blob report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: report-day1-db-${{ github.run_number }}
-          path: playwright-report/
-          retention-days: 14
+          name: blob-report-day1-db-${{ github.run_number }}
+          path: blob-report/
+          retention-days: 3
 
   # ── Job 3: Day2 API Tests ─────────────────────────────────────────────────
   day2-api:
@@ -202,17 +202,17 @@ jobs:
           npx playwright test tests/Day2/auth-test.spec.ts \
                               tests/Day2/crud-api.spec.ts \
                               tests/Day2/events-api.spec.ts \
-                              --project=day2
+                              --project=day2 --reporter=blob
         env:
           CI: true
 
-      - name: Upload Day2 API report
+      - name: Upload Day2 API blob report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: report-day2-api-${{ github.run_number }}
-          path: playwright-report/
-          retention-days: 14
+          name: blob-report-day2-api-${{ github.run_number }}
+          path: blob-report/
+          retention-days: 3
 
   # ── Job 4: Day3 UI Tests — Chromium ──────────────────────────────────────
   day3-chromium:
@@ -246,17 +246,17 @@ jobs:
         run: npx playwright install-deps chromium
 
       - name: Run Day3 tests on Chromium
-        run: npx playwright test tests/Day3_AI_generated/ --project=ui-chromium
+        run: npx playwright test tests/Day3_AI_generated/ --project=ui-chromium --reporter=blob
         env:
           CI: true
 
-      - name: Upload Day3 Chromium report
+      - name: Upload Day3 Chromium blob report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: report-day3-chromium-${{ github.run_number }}
-          path: playwright-report/
-          retention-days: 14
+          name: blob-report-day3-chromium-${{ github.run_number }}
+          path: blob-report/
+          retention-days: 3
 
   # ── Job 5: Day3 UI Tests — Firefox ────────────────────────────────────────
   day3-firefox:
@@ -290,17 +290,17 @@ jobs:
         run: npx playwright install-deps firefox
 
       - name: Run Day3 tests on Firefox
-        run: npx playwright test tests/Day3_AI_generated/ --project=ui-firefox
+        run: npx playwright test tests/Day3_AI_generated/ --project=ui-firefox --reporter=blob
         env:
           CI: true
 
-      - name: Upload Day3 Firefox report
+      - name: Upload Day3 Firefox blob report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: report-day3-firefox-${{ github.run_number }}
-          path: playwright-report/
-          retention-days: 14
+          name: blob-report-day3-firefox-${{ github.run_number }}
+          path: blob-report/
+          retention-days: 3
 
   # ── Job 6: Day4 Tests ─────────────────────────────────────────────────────
   day4:
@@ -334,17 +334,17 @@ jobs:
         run: npx playwright install-deps chromium
 
       - name: Run Day4 tests
-        run: npx playwright test tests/Day4/ --project=day4
+        run: npx playwright test tests/Day4/ --project=day4 --reporter=blob
         env:
           CI: true
 
-      - name: Upload Day4 report
+      - name: Upload Day4 blob report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: report-day4-${{ github.run_number }}
-          path: playwright-report/
-          retention-days: 14
+          name: blob-report-day4-${{ github.run_number }}
+          path: blob-report/
+          retention-days: 3
 
   # ── Job 7: Day5 Tests ─────────────────────────────────────────────────────
   day5:
@@ -378,17 +378,17 @@ jobs:
         run: npx playwright install-deps chromium
 
       - name: Run Day5 tests
-        run: npx playwright test tests/Day5/ --project=day5
+        run: npx playwright test tests/Day5/ --project=day5 --reporter=blob
         env:
           CI: true
 
-      - name: Upload Day5 report
+      - name: Upload Day5 blob report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: report-day5-${{ github.run_number }}
-          path: playwright-report/
-          retention-days: 14
+          name: blob-report-day5-${{ github.run_number }}
+          path: blob-report/
+          retention-days: 3
 
   # ── Job 8: Merge all reports into one HTML report ─────────────────────────
   merge-reports:
@@ -408,17 +408,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Download all job reports
+      - name: Download all blob reports
         uses: actions/download-artifact@v4
         with:
-          path: all-reports/
-          pattern: report-*-${{ github.run_number }}
+          path: all-blob-reports/
+          pattern: blob-report-*-${{ github.run_number }}
           merge-multiple: false
 
-      - name: Merge reports into single HTML
-        run: npx playwright merge-reports --reporter html all-reports/
+      - name: Merge blob reports into single HTML
+        run: npx playwright merge-reports --reporter html all-blob-reports/*/
 
-      - name: Upload merged report
+      - name: Upload merged HTML report
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-merged-${{ github.run_number }}
