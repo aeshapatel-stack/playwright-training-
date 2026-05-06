@@ -1,0 +1,443 @@
+name: Playwright CI/CD
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: '0 6 * * 1-5'   # Mon–Fri at 06:00 UTC
+  workflow_dispatch:          # manual trigger from GitHub UI
+
+env:
+  NODE_VERSION: '20'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Jobs run in parallel. merge-reports waits for all of them.
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+
+  # ── Job 1: Day1 UI Tests ──────────────────────────────────────────────────
+  day1-ui:
+    name: Day1 — UI Tests (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache-chromium
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium browser
+        if: steps.pw-cache-chromium.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium deps only (cache hit)
+        if: steps.pw-cache-chromium.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run Day1 UI tests
+        run: npx playwright test tests/Day1/ui.spec.ts tests/Day1/example.spec.ts --project=day1
+        env:
+          CI: true
+
+      - name: Upload Day1 UI report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-day1-ui-${{ github.run_number }}
+          path: playwright-report/
+          retention-days: 14
+
+  # ── Job 2: Day1 DB Tests (needs PostgreSQL + mock auth server) ─────────────
+  day1-db:
+    name: Day1 — DB Tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: evaldb
+          POSTGRES_PASSWORD: evaldb
+          POSTGRES_DB: evaldb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create database schema
+        run: |
+          PGPASSWORD=evaldb psql -h localhost -U evaldb -d evaldb -c "
+            CREATE EXTENSION IF NOT EXISTS pgcrypto;
+            CREATE TABLE IF NOT EXISTS users (
+              id           VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::VARCHAR,
+              email        VARCHAR UNIQUE NOT NULL,
+              password_hash VARCHAR NOT NULL,
+              role         VARCHAR NOT NULL DEFAULT 'user',
+              created_at   TIMESTAMPTZ DEFAULT NOW()
+            );
+          "
+
+      - name: Start mock auth server (localhost:8000)
+        run: |
+          node -e "
+          const http = require('http');
+          const { Pool } = require('pg');
+          const crypto = require('crypto');
+          const pool = new Pool({ connectionString: 'postgres://evaldb:evaldb@localhost:5432/evaldb' });
+
+          http.createServer(async (req, res) => {
+            if (req.method === 'POST' && req.url === '/auth/register') {
+              let body = '';
+              req.on('data', c => body += c);
+              req.on('end', async () => {
+                try {
+                  const { email, password } = JSON.parse(body);
+                  const id   = crypto.randomUUID();
+                  const salt = crypto.randomBytes(16).toString('base64');
+                  const hash = '\$pbkdf2-sha256\$29000\$' + salt + '\$' + crypto.createHash('sha256').update(password + salt).digest('base64');
+                  await pool.query(
+                    'INSERT INTO users (id, email, password_hash, role) VALUES (\$1, \$2, \$3, \$4)',
+                    [id, email, hash, 'user']
+                  );
+                  res.writeHead(201, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({
+                    status: 'success',
+                    data: {
+                      access_token: 'ci-mock-token',
+                      token_type: 'bearer',
+                      user: { id, email, role: 'user' }
+                    },
+                    error: null
+                  }));
+                } catch (err) {
+                  res.writeHead(500);
+                  res.end(JSON.stringify({ error: err.message }));
+                }
+              });
+            } else {
+              res.writeHead(404);
+              res.end(JSON.stringify({ status: 'error', error: 'Not Found' }));
+            }
+          }).listen(8000, () => console.log('Mock auth server running on :8000'));
+          " &
+          sleep 2
+          curl -s http://localhost:8000/ || echo "Server check done"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache-db
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium browser
+        if: steps.pw-cache-db.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium deps only (cache hit)
+        if: steps.pw-cache-db.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run DB tests
+        run: npx playwright test tests/Day1/db.spec.ts --project=day1
+        env:
+          CI: true
+
+      - name: Upload Day1 DB report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-day1-db-${{ github.run_number }}
+          path: playwright-report/
+          retention-days: 14
+
+  # ── Job 3: Day2 API Tests ─────────────────────────────────────────────────
+  day2-api:
+    name: Day2 — API Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # API.spec.ts requires a local server (localhost:8000) not available in CI
+      - name: Run Day2 API tests (excluding local-server tests)
+        run: |
+          npx playwright test tests/Day2/auth-test.spec.ts \
+                              tests/Day2/crud-api.spec.ts \
+                              tests/Day2/events-api.spec.ts \
+                              --project=day2
+        env:
+          CI: true
+
+      - name: Upload Day2 API report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-day2-api-${{ github.run_number }}
+          path: playwright-report/
+          retention-days: 14
+
+  # ── Job 4: Day3 UI Tests — Chromium ──────────────────────────────────────
+  day3-chromium:
+    name: Day3 — UI Tests (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache-chr
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium browser
+        if: steps.pw-cache-chr.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium deps only (cache hit)
+        if: steps.pw-cache-chr.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run Day3 tests on Chromium
+        run: npx playwright test tests/Day3_AI_generated/ --project=ui-chromium
+        env:
+          CI: true
+
+      - name: Upload Day3 Chromium report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-day3-chromium-${{ github.run_number }}
+          path: playwright-report/
+          retention-days: 14
+
+  # ── Job 5: Day3 UI Tests — Firefox ────────────────────────────────────────
+  day3-firefox:
+    name: Day3 — UI Tests (Firefox)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache-ff
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-firefox-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Firefox browser
+        if: steps.pw-cache-ff.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps firefox
+
+      - name: Install Firefox deps only (cache hit)
+        if: steps.pw-cache-ff.outputs.cache-hit == 'true'
+        run: npx playwright install-deps firefox
+
+      - name: Run Day3 tests on Firefox
+        run: npx playwright test tests/Day3_AI_generated/ --project=ui-firefox
+        env:
+          CI: true
+
+      - name: Upload Day3 Firefox report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-day3-firefox-${{ github.run_number }}
+          path: playwright-report/
+          retention-days: 14
+
+  # ── Job 6: Day4 Tests ─────────────────────────────────────────────────────
+  day4:
+    name: Day4 — Excel + AI-Driven + POM Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache-day4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium browser
+        if: steps.pw-cache-day4.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium deps only (cache hit)
+        if: steps.pw-cache-day4.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run Day4 tests
+        run: npx playwright test tests/Day4/ --project=day4
+        env:
+          CI: true
+
+      - name: Upload Day4 report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-day4-${{ github.run_number }}
+          path: playwright-report/
+          retention-days: 14
+
+  # ── Job 7: Day5 Tests ─────────────────────────────────────────────────────
+  day5:
+    name: Day5 — Booking + Events Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache-day5
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium browser
+        if: steps.pw-cache-day5.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium deps only (cache hit)
+        if: steps.pw-cache-day5.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run Day5 tests
+        run: npx playwright test tests/Day5/ --project=day5
+        env:
+          CI: true
+
+      - name: Upload Day5 report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-day5-${{ github.run_number }}
+          path: playwright-report/
+          retention-days: 14
+
+  # ── Job 8: Merge all reports into one HTML report ─────────────────────────
+  merge-reports:
+    name: Merge Test Reports
+    needs: [day1-ui, day1-db, day2-api, day3-chromium, day3-firefox, day4, day5]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download all job reports
+        uses: actions/download-artifact@v4
+        with:
+          path: all-reports/
+          pattern: report-*-${{ github.run_number }}
+          merge-multiple: false
+
+      - name: Merge reports into single HTML
+        run: npx playwright merge-reports --reporter html all-reports/
+
+      - name: Upload merged report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-merged-${{ github.run_number }}
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Print run summary
+        if: always()
+        run: |
+          echo "## Playwright Test Run Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Day1 UI       | ${{ needs.day1-ui.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Day1 DB       | ${{ needs.day1-db.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Day2 API      | ${{ needs.day2-api.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Day3 Chromium | ${{ needs.day3-chromium.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Day3 Firefox  | ${{ needs.day3-firefox.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Day4          | ${{ needs.day4.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Day5          | ${{ needs.day5.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Merged report uploaded as artifact: \`playwright-report-merged-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY

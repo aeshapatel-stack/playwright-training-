@@ -1,0 +1,61 @@
+{
+  "requiredFieldsOnly": {
+    "title": "QA Automation Conference",
+    "city": "Bangalore",
+    "venue": "KTPO Convention Centre",
+    "date": "2027-06-15T10:00",
+    "price": 299,
+    "seats": 100
+  },
+  "allFieldsIncluded": {
+    "title": "DevOps Deep Dive",
+    "category": "Conference",
+    "city": "Pune",
+    "venue": "Symbiosis Tech Park",
+    "date": "2027-08-20T09:00",
+    "price": 199,
+    "seats": 50,
+    "description": "A comprehensive hands-on DevOps workshop for QA engineers.",
+    "imageUrl": "https://example.com/devops.jpg"
+  },
+  "workshopCategory": {
+    "title": "Docker Fundamentals",
+    "category": "Workshop",
+    "city": "Hyderabad",
+    "venue": "HITEC City Expo",
+    "date": "2027-10-05T14:00",
+    "price": 149,
+    "seats": 40
+  },
+  "allEventsListVerification": {
+    "title": "Public Visibility Check Event",
+    "city": "Mumbai",
+    "venue": "BKC Convention Hall",
+    "date": "2027-07-20T09:00",
+    "price": 0,
+    "seats": 50
+  },
+  "missingTitle": {
+    "city": "Delhi",
+    "venue": "Pragati Maidan",
+    "date": "2027-11-15T10:00",
+    "price": 50,
+    "seats": 25
+  },
+  "zeroSeats": {
+    "title": "Invalid Seats Event",
+    "city": "Chennai",
+    "venue": "Trade Centre",
+    "date": "2027-09-10T11:00",
+    "price": 100,
+    "seats": 0
+  },
+  "validationMessages": {
+    "titleRequired": "Title is required",
+    "cityRequired": "City is required",
+    "venueRequired": "Venue is required",
+    "dateRequired": "Event date is required",
+    "priceInvalid": "Enter a valid price (≥ 0)",
+    "seatsInvalid": "Must have at least 1 seat"
+  }
+}

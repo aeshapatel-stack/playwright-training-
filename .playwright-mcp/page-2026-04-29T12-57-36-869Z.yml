@@ -1,0 +1,190 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e5]:
+    - generic [ref=e7]:
+      - link "EventHub" [ref=e8] [cursor=pointer]:
+        - /url: /
+        - img [ref=e10]
+        - generic [ref=e12]: EventHub
+      - generic [ref=e13]:
+        - link "Home" [ref=e14] [cursor=pointer]:
+          - /url: /
+        - link "Events" [ref=e15] [cursor=pointer]:
+          - /url: /events
+        - link "My Bookings" [ref=e16] [cursor=pointer]:
+          - /url: /bookings
+        - link "API Docs" [ref=e17] [cursor=pointer]:
+          - /url: https://api.eventhub.rahulshettyacademy.com/api/docs
+        - button "Admin" [ref=e19] [cursor=pointer]:
+          - text: Admin
+          - img [ref=e20]
+        - generic [ref=e22]:
+          - generic "login_test_fixed@example.com" [ref=e23]
+          - button "Logout" [ref=e24] [cursor=pointer]
+  - main [ref=e25]:
+    - generic [ref=e26]:
+      - generic [ref=e28]:
+        - heading "+ New Event" [level=2] [ref=e29]
+        - generic [ref=e30]:
+          - img [ref=e31]
+          - text: You can add up to
+          - strong [ref=e33]: 6 events
+          - text: . Once the limit is reached, your oldest event is automatically replaced when you add a new one.
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - generic [ref=e36]:
+              - generic [ref=e37]: Title*
+              - textbox "Title*" [ref=e38]:
+                - /placeholder: Event title
+            - generic [ref=e39]:
+              - generic [ref=e40]: Description
+              - textbox "Describe the event…" [ref=e41]
+            - generic [ref=e42]:
+              - generic [ref=e43]: Category*
+              - combobox "Category*" [ref=e44] [cursor=pointer]:
+                - option "Conference" [selected]
+                - option "Concert"
+                - option "Sports"
+                - option "Workshop"
+                - option "Festival"
+            - generic [ref=e45]:
+              - generic [ref=e46]: City*
+              - textbox "City*" [ref=e47]:
+                - /placeholder: e.g. Bangalore
+            - generic [ref=e48]:
+              - generic [ref=e49]: Venue*
+              - textbox "Venue*" [ref=e50]:
+                - /placeholder: Venue name & address
+            - generic [ref=e51]:
+              - generic [ref=e52]: Event Date & Time*
+              - textbox "Event Date & Time*" [ref=e53]
+            - generic [ref=e54]:
+              - generic [ref=e55]: Price ($)*
+              - spinbutton "Price ($)*" [ref=e56]
+            - generic [ref=e57]:
+              - generic [ref=e58]: Total Seats*
+              - spinbutton "Total Seats*" [ref=e59]
+            - generic [ref=e60]:
+              - generic [ref=e61]: Image URL (optional)
+              - textbox "Image URL (optional)" [ref=e62]:
+                - /placeholder: https://…
+          - button "+ Add Event" [ref=e64] [cursor=pointer]
+      - generic [ref=e66]:
+        - generic [ref=e67]:
+          - heading "All Events" [level=2] [ref=e68]
+          - generic [ref=e69]: 4 total
+        - table [ref=e71]:
+          - rowgroup [ref=e72]:
+            - row "Title Category City Date Price Seats Actions" [ref=e73]:
+              - columnheader "Title" [ref=e74]
+              - columnheader "Category" [ref=e75]
+              - columnheader "City" [ref=e76]
+              - columnheader "Date" [ref=e77]
+              - columnheader "Price" [ref=e78]
+              - columnheader "Seats" [ref=e79]
+              - columnheader "Actions" [ref=e80]
+          - rowgroup [ref=e81]:
+            - row "Dilli Diwali Mela Featured Festival Delhi 20 Oct 2026 $300 10000/10000 Read-only" [ref=e82]:
+              - cell "Dilli Diwali Mela Featured" [ref=e83]:
+                - text: Dilli Diwali Mela
+                - generic [ref=e84]: Featured
+              - cell "Festival" [ref=e85]:
+                - generic [ref=e86]: Festival
+              - cell "Delhi" [ref=e87]
+              - cell "20 Oct 2026" [ref=e88]
+              - cell "$300" [ref=e89]
+              - cell "10000/10000" [ref=e90]:
+                - generic [ref=e91]: 10000/10000
+              - cell "Read-only" [ref=e92]
+            - row "Hollywood Monsoon Night — Los Angeles Featured Concert Los Angeles 12 Jul 2026 $2,500 3000/3000 Read-only" [ref=e93]:
+              - cell "Hollywood Monsoon Night — Los Angeles Featured" [ref=e94]:
+                - text: Hollywood Monsoon Night — Los Angeles
+                - generic [ref=e95]: Featured
+              - cell "Concert" [ref=e96]:
+                - generic [ref=e97]: Concert
+              - cell "Los Angeles" [ref=e98]
+              - cell "12 Jul 2026" [ref=e99]
+              - cell "$2,500" [ref=e100]
+              - cell "3000/3000" [ref=e101]:
+                - generic [ref=e102]: 3000/3000
+              - cell "Read-only" [ref=e103]
+            - row "World Tech Summit Featured Conference Hyderabad 18 Apr 2026 $1,500 500/500 Read-only" [ref=e104]:
+              - cell "World Tech Summit Featured" [ref=e105]:
+                - text: World Tech Summit
+                - generic [ref=e106]: Featured
+              - cell "Conference" [ref=e107]:
+                - generic [ref=e108]: Conference
+              - cell "Hyderabad" [ref=e109]
+              - cell "18 Apr 2026" [ref=e110]
+              - cell "$1,500" [ref=e111]
+              - cell "500/500" [ref=e112]:
+                - generic [ref=e113]: 500/500
+              - cell "Read-only" [ref=e114]
+            - row "Test Tech Summit Conference Mumbai 15 Dec 2026 $500 100/100 Edit Delete" [ref=e154]:
+              - cell "Test Tech Summit" [ref=e155]
+              - cell "Conference" [ref=e156]:
+                - generic [ref=e157]: Conference
+              - cell "Mumbai" [ref=e158]
+              - cell "15 Dec 2026" [ref=e159]
+              - cell "$500" [ref=e160]
+              - cell "100/100" [ref=e161]:
+                - generic [ref=e162]: 100/100
+              - cell "Edit Delete" [ref=e163]:
+                - generic [ref=e164]:
+                  - button "Edit" [ref=e165] [cursor=pointer]
+                  - button "Delete" [ref=e166] [cursor=pointer]
+  - contentinfo [ref=e115]:
+    - generic [ref=e116]:
+      - generic [ref=e117]:
+        - generic [ref=e118]:
+          - heading "Rahul Shetty Academy" [level=3] [ref=e119]
+          - paragraph [ref=e120]: India's leading QA automation training academy — empowering engineers to build real-world testing skills.
+        - generic [ref=e121]:
+          - heading "Popular Courses" [level=3] [ref=e122]
+          - list [ref=e123]:
+            - listitem [ref=e124]:
+              - link "Selenium WebDriver with Java" [ref=e125] [cursor=pointer]:
+                - /url: https://rahulshettyacademy.com
+            - listitem [ref=e126]:
+              - link "Playwright with JavaScript" [ref=e127] [cursor=pointer]:
+                - /url: https://rahulshettyacademy.com
+            - listitem [ref=e128]:
+              - link "RestAssured API Testing" [ref=e129] [cursor=pointer]:
+                - /url: https://rahulshettyacademy.com
+            - listitem [ref=e130]:
+              - link "Cypress End-to-End Testing" [ref=e131] [cursor=pointer]:
+                - /url: https://rahulshettyacademy.com
+            - listitem [ref=e132]:
+              - link "Appium Mobile Testing" [ref=e133] [cursor=pointer]:
+                - /url: https://rahulshettyacademy.com
+        - generic [ref=e134]:
+          - heading "QA Job Hiring Platform" [level=3] [ref=e135]
+          - paragraph [ref=e136]: Get hired faster — take skill assessments trusted by top QA employers worldwide.
+          - link "techsmarthire.com →" [ref=e137] [cursor=pointer]:
+            - /url: https://techsmarthire.com
+        - generic [ref=e138]:
+          - heading "EventHub Practice App" [level=3] [ref=e139]
+          - list [ref=e140]:
+            - listitem [ref=e141]:
+              - link "Browse Events" [ref=e142] [cursor=pointer]:
+                - /url: /events
+            - listitem [ref=e143]:
+              - link "My Bookings" [ref=e144] [cursor=pointer]:
+                - /url: /bookings
+            - listitem [ref=e145]:
+              - link "Manage Events" [ref=e146] [cursor=pointer]:
+                - /url: /admin/events
+            - listitem [ref=e147]:
+              - link "API Documentation" [ref=e148] [cursor=pointer]:
+                - /url: https://api.eventhub.rahulshettyacademy.com/api/docs
+      - generic [ref=e149]:
+        - paragraph [ref=e150]: © 2026 Rahul Shetty Academy. All rights reserved.
+        - generic [ref=e151]:
+          - link "rahulshettyacademy.com →" [ref=e152] [cursor=pointer]:
+            - /url: https://rahulshettyacademy.com
+          - link "techsmarthire.com →" [ref=e153] [cursor=pointer]:
+            - /url: https://techsmarthire.com
+  - generic [ref=e168]:
+    - generic [ref=e170]: ✓
+    - paragraph [ref=e171]: Event created!
+    - button "Dismiss" [ref=e172] [cursor=pointer]: ×
+  - alert [ref=e4]

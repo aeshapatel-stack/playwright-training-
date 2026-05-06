@@ -1,0 +1,34 @@
+{
+  "name": "playwright-training",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "mcp": "tsx src/mcp-server.ts",
+    "gen:types": "openapi-typescript src/openapi.json -o src/api-types.ts",
+    "gen:docs": "tsx scripts/swagger-to-md.ts",
+    "test:all": "playwright test",
+    "test:day4": "playwright test --project=day4",
+    "test:ui": "playwright test --project=ui-chromium --project=ui-firefox",
+    "test:api": "playwright test --project=api"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "^12.1.0",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0",
+    "openapi-typescript": "^7.13.0",
+    "tsx": "^4.21.0",
+    "xlsx": "^0.18.5"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@types/pg": "^8.20.0",
+    "dotenv": "^17.4.2",
+    "pg": "^8.20.0",
+    "zod": "^4.3.6"
+  }
+}

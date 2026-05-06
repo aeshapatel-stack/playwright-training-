@@ -1,0 +1,83 @@
+ What the priority number means
+
+  priority: 1  →  most specific / most stable selector (tried first, no warning logged)
+  priority: 2  →  fallback — logs: [SelfHealing] Primary selector failed — fell back to 'has-text': button:has-text("Sign In")
+  priority: 3  →  last resort — same warning, most fragile (positional/generic selectors)
+
+  If the app is refactored and the button[type="submit"] is renamed, priority 2 (button:has-text("Sign In")) kicks in automatically —
+   the test keeps passing and the console warning tells you which selector needs updating.
+   
+==============================================================================================================================================
+
+A self-healing script in test automation is a script that can automatically recover from certain failures—usually caused by UI changes—without needing you to manually fix the test every time.
+
+=====================================================================================================================================
+
+Day1 :
+npx playwright test --project=day1 tests/Day1/ui.spec.ts  --In the report I have included ss , for which I have updated config file with SS=true
+
+==============================================================================================================================================
+
+What is use of api-refrence.md file
+┌──────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────┐
+  │          Situation           │                                     How you use it                                      │
+  ├──────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Writing a new API test       │ Open the file to check the exact expected status code and required fields — no guessing │
+  ├──────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Onboarding a new team member │ Share the file so they understand all endpoints without reading raw JSON                │
+  ├──────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Debugging a failing test     │ Quickly check which endpoints require auth and what error codes mean                    │
+  ├──────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────┤
+  │ API drifts / changes         │ Run npm run gen:docs — the file regenerates automatically and stays in sync             │
+  └──────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────┘
+ Never edit api-refrence.md file, always run command npm run gen:docs
+
+========================================================================================================================================
+
+ fixtures/api-fixtures.ts — API Fixture
+
+  What it does: Before every test that uses it, it automatically registers a fresh user via the API and hands you a ready-to-use
+  loginApi object.
+  Who uses it: tests/Day2/auth-test.spec.ts, tests/Day2/crud-api.spec.ts
+
+tests/Day3_AI_generated/ui-fixture.ts — UI Fixture
+
+  What it does: Before every test that uses it, it automatically navigates to the home page / and hands you the appPage (which is
+  just the Playwright page object, pre-navigated).
+
+  // Instead of doing this in EVERY test:
+  await page.goto('/');
+  
+   Who uses it: tests/Day3_AI_generated/Eventhub_UI.spec.ts, tests/Day3_AI_generated/Eventhub_UI_POM.spec.ts
+
+  Why it exists:
+  - Every UI test in Day3 starts from the base URL
+  - Centralises that navigation in one place — if the start URL changes, you update one file
+  
+==========================================================================================================================================
+
+AIdriventypeAPI.spec 
+
+ It runs 2 API tests whose behaviour is driven by the OpenAPI/Swagger spec (src/openapi.json) rather than hardcoded values. The test
+   names, expected HTTP status codes, and endpoint metadata are all read from the spec at runtime.
+   
+ This is the heart of the AI-driven approach. It reads two things from the spec for any given endpoint:
+
+  ┌──────────────────┬───────────────────────────────────────────────────┬──────────────────────────────────┐
+  │ What it extracts │                        How                        │          Example result          │
+  ├──────────────────┼───────────────────────────────────────────────────┼──────────────────────────────────┤
+  │ summary          │ Reads op.summary from the spec                    │ "Register a new user"            │
+  ├──────────────────┼───────────────────────────────────────────────────┼──────────────────────────────────┤
+  │ okStatus         │ Finds the first 2xx response code in op.responses │ 201 for register, 200 for events │
+  └──────────────────┴───────────────────────────────────────────────────┴──────────────────────────────────┘
+
+  Step by step:
+  1. rawSpec.paths['/auth/register']['post'] — goes to that exact endpoint in the spec
+  2. op.summary — reads the human-readable description written by the API team
+  3. Object.keys(op.responses) — gets all response codes ['201', '400']
+  4. .find(s => Number(s) >= 200 && Number(s) < 300) — picks the first success code (201)
+  
+==============================================================================================================================================
+
+
+ 
